@@ -14,6 +14,13 @@ def process_metadata(cur):
                 continue
             ids.add(row["id"])
 
+            # SQLAlchemy does not seems to handle empty Dates
+            # well when selecting the data.
+            # TODO: look into this.
+            if not row["release_date"]:
+                print(f"Skipping {row['title']}, no release date.")
+                continue
+
             data += [
                 (
                     row["budget"],
@@ -25,10 +32,12 @@ def process_metadata(cur):
             ]
         cur.executemany("INSERT INTO movies VALUES(?, ?, ?, ?, ?)", data)
 
+
 def process_credits(cur):
     with open("data/credits.csv", "r") as f:
         reader = csv.DictReader(f)
         ids = set()
+        credit_id = 0
         for row in reader:
             # there seem to be duplicates in this dataset
             if row["id"] in ids:
@@ -44,9 +53,10 @@ def process_credits(cur):
                         c["department"],
                         c["name"],
                         c["id"],
-                        hash(c["credit_id"]),
+                        credit_id,
                     )
                 ]
+                credit_id += 1
             cur.executemany("INSERT INTO crew_credits VALUES(?, ?, ?, ?, ?)", crew_data)
 
             cast_data = []
@@ -58,10 +68,13 @@ def process_credits(cur):
                         c["name"],
                         c["id"],
                         row["id"],
-                        hash(c["credit_id"]),
+                        credit_id,
                     )
                 ]
-            cur.executemany("INSERT INTO actor_credits VALUES(?, ?, ?, ?, ?)", cast_data)
+                credit_id += 1
+            cur.executemany(
+                "INSERT INTO actor_credits VALUES(?, ?, ?, ?, ?)", cast_data
+            )
 
 
 con = sqlite3.connect("instance/movies.db")
