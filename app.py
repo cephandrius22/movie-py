@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, make_response
+from flask import Flask, jsonify, make_response, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql import text
 
@@ -83,7 +83,15 @@ def index():
 
 @app.route("/movies", methods=["GET"])
 def get_movie_collection():
-    movies: list[Movie] = Movie.query.limit(50).all()
+    title = request.args.get('title', None)
+    budget = request.args.get('title', None)
+    release_date = request.args.get('title', None)
+    runtime = request.args.get('title', None)
+    if title:
+        movies: list[Movie] = Movie.query.filter(Movie.title == title).all()
+    else:
+        movies: list[Movie] = Movie.query.limit(50).all()
+
     movie_list = []
     for movie in movies:
         movie_list += [movie.to_dict()]
