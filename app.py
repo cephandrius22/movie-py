@@ -83,14 +83,23 @@ def index():
 
 @app.route("/movies", methods=["GET"])
 def get_movie_collection():
-    title = request.args.get('title', None)
-    budget = request.args.get('title', None)
-    release_date = request.args.get('title', None)
-    runtime = request.args.get('title', None)
-    if title:
-        movies: list[Movie] = Movie.query.filter(Movie.title == title).all()
-    else:
-        movies: list[Movie] = Movie.query.limit(50).all()
+    # This feels like a messy way to handle this. There should
+    # be some sort of smarter mapping here.
+    filters = []
+    for name, var in [
+        ("title", Movie.title),
+        ("budget", Movie.budget),
+        ("release_date", Movie.release_date),
+        ("runtime", Movie.runtime),
+    ]:
+        filt_val = request.args.get(name, None)
+
+        if not filt_val:
+            continue
+
+        filters.append(var == filt_val)
+
+    movies: list[Movie] = Movie.query.filter(*filters).limit(50).all()
 
     movie_list = []
     for movie in movies:
